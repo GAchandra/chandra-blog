@@ -220,12 +220,14 @@ def delete_post(post_id):
     return redirect(url_for('get_all_posts'))
 
 @app.route('/admin/users/<password>')
+@admin_only
 def see_all_users(password):
-    hash_password = generate_password_hash(os.environ.get("ADMIN_PASSWORD"))
-    if check_password_hash(hash_password,  password):
+
+    if  os.environ.get("ADMIN_PASSWORD") == password:
         time = datetime.now().time()
         return render_template('admin.html', users=User.query.all(), time=time)
-
+    else:
+        return redirect('/')
 
 
 
