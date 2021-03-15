@@ -10,6 +10,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from flask_gravatar import Gravatar
 import os
+from  datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(32)
@@ -88,7 +89,7 @@ def admin_only(f):
 @app.route('/')
 def get_all_posts():
     posts = BlogPost.query.all()
-    return render_template("index.html", all_posts=posts)
+    return render_template("index.html", all_posts=posts, current_year=datetime.now().year)
 
 
 @app.route('/register', methods=['GET', 'POST'])
