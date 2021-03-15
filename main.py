@@ -44,8 +44,6 @@ class User(UserMixin, db.Model):
     registered_on = db.Column(db.DateTime, nullable=False)
     posts = relationship("BlogPost", back_populates='author')
     comments = relationship("Comment", back_populates='comment_author')
-    confirmed = db.Column(db.Boolean, nullable=False, default=False)
-    confirmed_on = db.Column(db.DateTime, nullable=False)
 
 
 class BlogPost(db.Model):
