@@ -219,6 +219,16 @@ def delete_post(post_id):
     db.session.commit()
     return redirect(url_for('get_all_posts'))
 
+@app.route('/admin/users/<password>')
+def see_all_users(password):
+    hash_password = generate_password_hash(os.environ.get("ADMIN_PASSWORD"))
+    if check_password_hash(hash_password,  password):
+        time = datetime.now().time()
+        return render_template('admin.html', users=User.query.all(), time=time)
+
+
+
+
 
 if __name__ == "__main__":
     app.run()
