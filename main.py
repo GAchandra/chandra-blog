@@ -13,14 +13,14 @@ import os
 from  datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(32)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 ckeditor = CKEditor(app)
 Bootstrap(app)
 login_manager = LoginManager()
 login_manager.init_app(app=app)
 
 # CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL',  "sqlite:///blog.db")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -85,11 +85,14 @@ def admin_only(f):
 
     return decorated_function
 
+@app.context_processor
+def inject_now():
+    return {'current_year': datetime.now().utcnow()}
 
 @app.route('/')
 def get_all_posts():
     posts = BlogPost.query.all()
-    return render_template("index.html", all_posts=posts, current_year=datetime.now().year)
+    return render_template("index.html", all_posts=posts)
 
 
 @app.route('/register', methods=['GET', 'POST'])
