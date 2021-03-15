@@ -10,7 +10,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from flask_gravatar import Gravatar
 import os
-from  datetime import datetime
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
@@ -20,7 +20,7 @@ login_manager = LoginManager()
 login_manager.init_app(app=app)
 
 # CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL',  "sqlite:///blog.db")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', "sqlite:///blog.db")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -41,8 +41,11 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(250), unique=True, nullable=False)
     password = db.Column(db.TEXT, nullable=False)
+    registered_on = db.Column(db.DateTime, nullable=False)
     posts = relationship("BlogPost", back_populates='author')
     comments = relationship("Comment", back_populates='comment_author')
+    confirmed = db.Column(db.Boolean, nullable=False, default=False)
+    confirmed_on = db.Column(db.DateTime, nullable=False)
 
 
 class BlogPost(db.Model):
@@ -85,9 +88,11 @@ def admin_only(f):
 
     return decorated_function
 
+
 @app.context_processor
 def inject_now():
     return {'now': datetime.now().utcnow()}
+
 
 @app.route('/')
 def get_all_posts():
@@ -106,6 +111,7 @@ def register():
             user = User()
             user.name = register_form.name.data
             user.email = register_form.email.data
+            user.registered_on = datetime.now()
             user.password = generate_password_hash(register_form.password.data, salt_length=10)
             db.session.add(user)
             db.session.commit()
@@ -218,18 +224,6 @@ def delete_post(post_id):
     db.session.delete(post_to_delete)
     db.session.commit()
     return redirect(url_for('get_all_posts'))
-
-@app.route('/admin/users/<password>')
-@admin_only
-def see_all_users(password):
-
-    if  os.environ.get("ADMIN_PASSWORD") == password:
-        time = datetime.now().time()
-        return render_template('admin.html', users=User.query.all(), time=time)
-    else:
-        return redirect('/')
-
-
 
 
 if __name__ == "__main__":
