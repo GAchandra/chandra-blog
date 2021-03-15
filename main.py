@@ -87,7 +87,7 @@ def admin_only(f):
 
 @app.context_processor
 def inject_now():
-    return {'current_year': datetime.now().utcnow()}
+    return {'now': datetime.now().utcnow()}
 
 @app.route('/')
 def get_all_posts():
