@@ -45,7 +45,7 @@ class User(UserMixin, db.Model):
     posts = relationship("BlogPost", back_populates='author')
     comments = relationship("Comment", back_populates='comment_author')
 
-
+db.create_all()
 class BlogPost(db.Model):
     __tablename__ = "blog_posts"
     id = db.Column(db.Integer, primary_key=True)
