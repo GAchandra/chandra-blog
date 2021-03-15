@@ -41,11 +41,13 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(250), unique=True, nullable=False)
     password = db.Column(db.TEXT, nullable=False)
-    registered_on = db.Column(db.DateTime, nullable=False)
     posts = relationship("BlogPost", back_populates='author')
     comments = relationship("Comment", back_populates='comment_author')
 
+
 db.create_all()
+
+
 class BlogPost(db.Model):
     __tablename__ = "blog_posts"
     id = db.Column(db.Integer, primary_key=True)
@@ -109,8 +111,8 @@ def register():
             user = User()
             user.name = register_form.name.data
             user.email = register_form.email.data
-            user.registered_on = datetime.now()
-            user.password = generate_password_hash(register_form.password.data, salt_length=10)
+            user.password = generate_password_hash(register_form.password.data,
+                                                   salt_length=int(os.environ.get('SALT_LENGTH')))
             db.session.add(user)
             db.session.commit()
             login_user(user, True)
