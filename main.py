@@ -45,7 +45,7 @@ class User(UserMixin, db.Model):
     comments = relationship("Comment", back_populates='comment_author')
 
 
-db.create_all()
+# db.create_all()
 
 
 class BlogPost(db.Model):
@@ -111,8 +111,7 @@ def register():
             user = User()
             user.name = register_form.name.data
             user.email = register_form.email.data
-            user.password = generate_password_hash(register_form.password.data,
-                                                   salt_length=int(os.environ.get('SALT_LENGTH')))
+            user.password = generate_password_hash(register_form.password.data, salt_length=int(os.environ.get('SALT_LENGTH')))
             db.session.add(user)
             db.session.commit()
             login_user(user, True)
