@@ -71,7 +71,7 @@ class Comment(db.Model):
     text = db.Column(db.TEXT, nullable=False)
 
 
-# db.create_all()
+db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
