@@ -64,12 +64,8 @@ def get_all_posts():
     return render_template("index.html", all_posts=posts)
 
 
-jwt = None
-
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    global jwt
     register_form = RegisterForm()
     if register_form.validate_on_submit():
         if User.query.filter_by(email=register_form.email.data).first():
@@ -115,7 +111,23 @@ def confirm_account_as_email(jwt_token):
         flash("You are successfully authenticated now. thank you for visiting my blog.", "success")
         return redirect(url_for("get_all_posts"))
     else:
-        return redirect(url_for('register'))
+
+        return redirect(url_for('resend_verification'))
+
+
+@app.route('/account-confirmation/email/resend/', methods=['GET', 'POST'])
+def resend_verification():
+    resend_email_form = ResendEmailFrom()
+    if resend_email_form.validate_on_submit():
+        user = User.query.filter_by(email=resend_email_form.email.data).first()
+        email_confirmation(user.email, user.name)
+        flash(
+            "We are send confirmation email to your email address, please follow the instruction to activate your "
+            "account.",
+            "Warning")
+        return redirect(url_for('get_all_posts'))
+    else:
+        return render_template('email_confirmation.html', form=resend_email_form)
 
 
 @app.route('/login', methods=['GET', 'POST'])

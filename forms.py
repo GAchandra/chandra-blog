@@ -25,3 +25,7 @@ class LoginForm(FlaskForm):
 class CommentForm(FlaskForm):
     text = CKEditorField("Comment", validators=[DataRequired()])
     submit = SubmitField("Submit")
+
+class ResendEmailFrom(FlaskForm):
+    email = StringField("Email", validators=[DataRequired(), Email()])
+    submit = SubmitField("Send me")

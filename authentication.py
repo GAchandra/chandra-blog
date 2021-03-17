@@ -2,6 +2,7 @@ import jwt
 from send_email import send_email
 import os
 from datetime import datetime
+from flask import request
 from werkzeug.security import generate_password_hash, check_password_hash
 
 email = ""
@@ -18,7 +19,7 @@ def email_confirmation(user_email, username):
     payload_value = f"{generate_password_hash(user_email, salt_length=10)}t?{now}"
     jwt_token_g_date = str(now)
     encoded = jwt.encode(key=secret, headers={"alg": "HS256", "typ": "JWT"}, payload={'payload': payload_value})
-    link = f'http://localhost:5000/account-confirmation/email/{encoded}'
+    link = f'{request.host_url}/account-confirmation/email/{encoded}'
     message = {
         'text': f"""
             Hello {username}, Your Account Communication Link:{link} Please visit 
@@ -36,15 +37,19 @@ def email_confirmation(user_email, username):
 
 def check_email_confirmation(token):
     global email, jwt_token_g_date
-    decoded_data = jwt.decode(token, key=secret_key, algorithms=["HS256"])
-    payload = decoded_data['payload'].split('t?')
-    user_email_hash = payload[0]
-    now = payload[1]
-    is_matches = check_password_hash(user_email_hash, email)
-    if is_matches:
-        if jwt_token_g_date == now:
-            return email
+    try:
+        decoded_data = jwt.decode(token, key=secret_key, algorithms=["HS256"])
+    except:
+        return False
+    else:
+        payload = decoded_data['payload'].split('t?')
+        user_email_hash = payload[0]
+        now = payload[1]
+        is_matches = check_password_hash(user_email_hash, email)
+        if is_matches:
+            if jwt_token_g_date == now:
+                return email
+            else:
+                return False
         else:
             return False
-    else:
-        return False
