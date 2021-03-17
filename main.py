@@ -5,12 +5,12 @@ from flask_ckeditor import CKEditor
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import login_required, login_user, logout_user, current_user, LoginManager
+from flask_login import login_required, login_user, logout_user, current_user, LoginManager, UserMixin
 from forms import *
 from flask_gravatar import Gravatar
 import os
-
-from tables import *
+from datetime import datetime
+from tables import create_tables
 from authentication import email_confirmation, check_email_confirmation
 
 app = Flask(__name__)
@@ -32,6 +32,8 @@ gravatar = Gravatar(app,
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', "sqlite:///blog.db")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+User, BlogPost, Comment = create_tables(db, UserMixin=UserMixin)
 
 
 @login_manager.user_loader

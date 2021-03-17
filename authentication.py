@@ -1,22 +1,26 @@
 import jwt
 from send_email import send_email
-from main import *
+import os
+from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
-email = None
-jwt_token_g_date = None
-secret_key = None
+email = ""
+jwt_token_g_date = ""
+secret_key = ""
+
+
 def email_confirmation(user_email, username):
-    global email, jwt_token_g_date, jwt_token, secret_key
+    global email, jwt_token_g_date, secret_key
     email = user_email
     secret = os.urandom(20).hex()
     secret_key = secret
     now = datetime.now()
-    payload_value =  f"{generate_password_hash(user_email, salt_length=10)}t?{now}"
+    payload_value = f"{generate_password_hash(user_email, salt_length=10)}t?{now}"
     jwt_token_g_date = str(now)
-    encoded = jwt.encode(key=secret,headers={"alg":"HS256", "typ": "JWT"}, payload={'payload': payload_value })
+    encoded = jwt.encode(key=secret, headers={"alg": "HS256", "typ": "JWT"}, payload={'payload': payload_value})
     link = f'http://localhost:5000/account-confirmation/email/{encoded}'
     message = {
-        'text':  f"""
+        'text': f"""
             Hello {username}, Your Account Communication Link:{link} Please visit 
         """,
         'html': f"""
@@ -28,6 +32,8 @@ def email_confirmation(user_email, username):
     }
 
     send_email('c_damayanthi@yahoo.com', 'yvkrjnjwyvssnbml', user_email, message, "Account Confirmation")
+
+
 def check_email_confirmation(token):
     global email, jwt_token_g_date
     decoded_data = jwt.decode(token, key=secret_key, algorithms=["HS256"])
