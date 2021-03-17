@@ -42,6 +42,7 @@ def check_email_confirmation(token):
     user_email_hash = payload[0]
     now = payload[1]
     is_matches = check_password_hash(user_email_hash, email)
+    print(decoded_data, now, is_matches, jwt_token_g_date == now, jwt_token_g_date)
     if is_matches:
         if jwt_token_g_date == now:
             return email
