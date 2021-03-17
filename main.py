@@ -146,7 +146,7 @@ def login():
                     return redirect(url_for('login'))
             else:
                 flash("Your account is not activating. please try again or contact me.", "error")
-                return redirect(url_for('login'))
+                return redirect(url_for('resend_verification'))
         else:
             flash("Email is does not exist, please try again.", "error")
             return redirect(url_for("login"))
