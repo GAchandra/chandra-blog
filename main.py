@@ -14,7 +14,7 @@ from tables import create_tables
 from authentication import email_confirmation, check_email_confirmation
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or os.urandom(24).hex()
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 ckeditor = CKEditor(app)
 Bootstrap(app)
 login_manager = LoginManager()
@@ -34,7 +34,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 User, BlogPost, Comment = create_tables(db, UserMixin=UserMixin)
-
+db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -80,7 +80,7 @@ def register():
             user.name = register_form.name.data
             user.email = register_form.email.data
             user.password = generate_password_hash(register_form.password.data,
-                                                   salt_length=int(os.environ.get('SALT_LENGTH') or 10))
+                                                   salt_length=int(os.environ.get('SALT_LENGTH')))
 
             db.session.add(user)
             db.session.commit()
