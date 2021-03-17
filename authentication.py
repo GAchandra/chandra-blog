@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from flask import request
 from werkzeug.security import generate_password_hash, check_password_hash
+import time
 
 email = ""
 jwt_token_g_date = ""
@@ -33,7 +34,7 @@ def email_confirmation(user_email, username):
     }
 
     send_email('c_damayanthi@yahoo.com', 'yvkrjnjwyvssnbml', user_email, message, "Account Confirmation")
-
+    time.sleep(32)
 
 def check_email_confirmation(token):
     global email, jwt_token_g_date
