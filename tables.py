@@ -17,7 +17,7 @@ def create_tables(db, UserMixin):
     class BlogPost(db.Model):
         __tablename__ = "blog_posts"
         id = db.Column(db.String, primary_key=True)
-        author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+        author_id = db.Column(db.String, db.ForeignKey('users.id'))
         author = relationship("User", back_populates='posts')
         title = db.Column(db.String(250), unique=True, nullable=False)
         subtitle = db.Column(db.String(250), nullable=False)
@@ -27,10 +27,10 @@ def create_tables(db, UserMixin):
         comments = relationship("Comment", back_populates='parent_post')
     class Comment(db.Model):
         __tablename__ = 'comments'
-        id = db.Column(db.Integer, primary_key=True)
+        id = db.Column(db.String, primary_key=True)
         author_id = db.Column(db.String, db.ForeignKey('users.id'))
         comment_author = relationship("User", back_populates='comments')
-        post_id = db.Column(db.Integer, db.ForeignKey('blog_posts.id'))
+        post_id = db.Column(db.String, db.ForeignKey('blog_posts.id'))
         parent_post = relationship("BlogPost", back_populates='comments')
         text = db.Column(db.TEXT, nullable=False)
     return User, BlogPost, Comment

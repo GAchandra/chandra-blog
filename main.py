@@ -36,6 +36,7 @@ db = SQLAlchemy(app)
 User, BlogPost, Comment = create_tables(db, UserMixin=UserMixin)
 db.create_all()
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.filter_by(id=user_id).first()
@@ -76,14 +77,20 @@ def register():
             return redirect(url_for('login'))
         else:
             user = User()
-            user.id = os.urandom(20).hex()
-            user.name = register_form.name.data
-            user.email = register_form.email.data
-            user.password = generate_password_hash(register_form.password.data,
-                                                   salt_length=int(os.environ.get('SALT_LENGTH')))
+            while True:
+                user.id = os.urandom(20).hex()
+                user.name = register_form.name.data
+                user.email = register_form.email.data
+                user.password = generate_password_hash(register_form.password.data,
+                                                       salt_length=int(os.environ.get('SALT_LENGTH')))
 
-            db.session.add(user)
-            db.session.commit()
+                db.session.add(user)
+                try:
+                    db.session.commit()
+                except:
+                    pass
+                else:
+                    break
             email_confirmation(user.email, user.name)
             flash(
                 "We are send confirmation email to your email address, please follow the instruction to activate your "
@@ -147,9 +154,18 @@ def show_post(post_id):
     if comment_form.validate_on_submit():
         if current_user.is_authenticated:
             parent_post = BlogPost.query.get(post_id)
-            comment = Comment(comment_author=current_user, parent_post=parent_post, text=comment_form.text.data)
-            db.session.add(comment)
-            db.session.commit()
+
+            while True:
+                comment = Comment(id=os.urandom(20).hex(), comment_author=current_user, parent_post=parent_post,
+                                  text=comment_form.text.data)
+                db.session.add(comment)
+                try:
+                    db.session.commit()
+                except:
+                    pass
+                else:
+                    break
+
             return redirect(url_for('show_post', post_id=post_id))
         else:
             flash("You need to login or register to comment")
@@ -175,21 +191,28 @@ def contact():
 def add_new_post():
     form = CreatePostForm()
     if form.validate_on_submit():
-        new_post = BlogPost(
-            title=form.title.data,
-            subtitle=form.subtitle.data,
-            body=form.body.data,
-            img_url=form.img_url.data,
-            author=current_user,
-            date=date.today().strftime("%B %d, %Y")
-        )
-        db.session.add(new_post)
-        db.session.commit()
+        while True:
+            new_post = BlogPost(
+                id=os.urandom(20).hex(),
+                title=form.title.data,
+                subtitle=form.subtitle.data,
+                body=form.body.data,
+                img_url=form.img_url.data,
+                author=current_user,
+                date=date.today().strftime("%B %d, %Y")
+            )
+            db.session.add(new_post)
+            try:
+                db.session.commit()
+            except:
+                pass
+            else:
+                break
         return redirect(url_for("get_all_posts"))
     return render_template("make-post.html", form=form)
 
 
-@app.route("/edit-post/<int:post_id>", methods=['GET', 'POST'])
+@app.route("/edit-post/<post_id>", methods=['GET', 'POST'])
 @login_required
 @admin_only
 def edit_post(post_id):
@@ -211,7 +234,7 @@ def edit_post(post_id):
     return render_template("make-post.html", form=edit_form)
 
 
-@app.route("/delete/<int:post_id>")
+@app.route("/delete/<post_id>")
 @login_required
 @admin_only
 def delete_post(post_id):
@@ -221,7 +244,7 @@ def delete_post(post_id):
     return redirect(url_for('get_all_posts'))
 
 
-@app.route('/delete/comment/<int:post_id>/<int:comment_id>/<int:user_id>')
+@app.route('/delete/comment/<post_id>/<comment_id>/<user_id>')
 @login_required
 def delete_comment(post_id, comment_id, user_id):
     comments = Comment.query.filter_by(author_id=user_id).all()
