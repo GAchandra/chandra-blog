@@ -37,19 +37,16 @@ def email_confirmation(user_email, username):
 
 def check_email_confirmation(token):
     global email, jwt_token_g_date
-    try:
-        decoded_data = jwt.decode(token, key=secret_key, algorithms=["HS256"])
-    except:
-        return False
-    else:
-        payload = decoded_data['payload'].split('t?')
-        user_email_hash = payload[0]
-        now = payload[1]
-        is_matches = check_password_hash(user_email_hash, email)
-        if is_matches:
-            if jwt_token_g_date == now:
-                return email
-            else:
-                return False
+
+    decoded_data = jwt.decode(token, key=secret_key, algorithms=["HS256"])
+    payload = decoded_data['payload'].split('t?')
+    user_email_hash = payload[0]
+    now = payload[1]
+    is_matches = check_password_hash(user_email_hash, email)
+    if is_matches:
+        if jwt_token_g_date == now:
+            return email
         else:
             return False
+    else:
+        return False
