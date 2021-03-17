@@ -34,7 +34,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 User, BlogPost, Comment = create_tables(db, UserMixin=UserMixin)
-# db.create_all()
+db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
