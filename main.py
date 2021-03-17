@@ -6,11 +6,11 @@ from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_required, login_user, logout_user, current_user, LoginManager
-from tables import *
 from forms import *
 from flask_gravatar import Gravatar
 import os
-from datetime import datetime
+
+from tables import *
 from authentication import email_confirmation, check_email_confirmation
 
 app = Flask(__name__)
