@@ -99,35 +99,46 @@ def register():
 
 @app.route('/account-confirmation/email/<jwt_token>')
 def confirm_account_as_email(jwt_token):
-    email = check_email_confirmation(jwt_token)
-    if email:
-        # Update the user
-        update_user = User.query.filter_by(email=email).first()
-        update_user.is_email_active = True
-        update_user.is_account_active = True
-        update_user.confirmed_time = datetime.now()
-        db.session.commit()
-        login_user(update_user, True)
-        flash("You are successfully authenticated now. thank you for visiting my blog.", "success")
-        return redirect(url_for("get_all_posts"))
-    else:
+    if current_user is None:
+        email = check_email_confirmation(jwt_token)
+        if email:
+            # Update the user
+            update_user = User.query.filter_by(email=email).first()
+            update_user.is_email_active = True
+            update_user.is_account_active = True
+            update_user.confirmed_time = datetime.now()
+            db.session.commit()
+            login_user(update_user, True)
+            flash("You are successfully authenticated now. thank you for visiting my blog.", "success")
+            return redirect(url_for("get_all_posts"))
+        else:
 
-        return redirect(url_for('resend_verification'))
+            return redirect(url_for('resend_verification'))
+    else:
+        return redirect(url_for('get_all_posts'))
 
 
 @app.route('/account-confirmation/email/resend/', methods=['GET', 'POST'])
 def resend_verification():
-    resend_email_form = ResendEmailFrom()
-    if resend_email_form.validate_on_submit():
-        user = User.query.filter_by(email=resend_email_form.email.data).first()
-        email_confirmation(user.email, user.name)
-        flash(
-            "We are send confirmation email to your email address, please follow the instruction to activate your "
-            "account.",
-            "Warning")
-        return redirect(url_for('get_all_posts'))
+    if current_user is not None:
+        resend_email_form = ResendEmailFrom()
+        if resend_email_form.validate_on_submit():
+            user = User.query.filter_by(email=resend_email_form.email.data).first()
+            if  not(user.is_account_active and user.is_email_confirmed):
+                email_confirmation(user.email, user.name)
+                flash(
+                    "We are send confirmation email to your email address, please follow the instruction to activate your "
+                    "account.",
+                    "Warning")
+                return redirect(url_for('get_all_posts'))
+            else:
+                flash("You are already confirmed your email address. please log in to your account normally")
+                return redirect(url_for('login'))
+
+        else:
+            return render_template('email_confirmation.html', form=resend_email_form)
     else:
-        return render_template('email_confirmation.html', form=resend_email_form)
+        return redirect('/')
 
 
 @app.route('/login', methods=['GET', 'POST'])
