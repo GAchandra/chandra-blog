@@ -19,6 +19,13 @@
   <div class="container">
     <div class="row">
       <div class="col-lg-8 col-md-10 mx-auto">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <p class="flashes {{ category }}">{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+        {% endwith %}
         {% for post in all_posts %}
         <div class="post-preview">
           <a href="{{ url_for('show_post', post_id=post.id) }}">

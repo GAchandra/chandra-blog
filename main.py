@@ -5,24 +5,20 @@ from flask_ckeditor import CKEditor
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import relationship
-from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
-from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
+from flask_login import login_required, login_user, logout_user, current_user, LoginManager
+from tables import *
+from forms import *
 from flask_gravatar import Gravatar
 import os
 from datetime import datetime
+from authentication import email_confirmation, check_email_confirmation
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or os.urandom(24).hex()
 ckeditor = CKEditor(app)
 Bootstrap(app)
 login_manager = LoginManager()
 login_manager.init_app(app=app)
-
-# CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', "sqlite:///blog.db")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
 
 gravatar = Gravatar(app,
                     size=100,
@@ -32,46 +28,11 @@ gravatar = Gravatar(app,
                     force_lower=False,
                     use_ssl=False,
                     base_url=None)
+# CONNECT TO DB
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', "sqlite:///blog.db")
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-
-# CONFIGURE TABLES
-class User(UserMixin, db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(250), unique=True, nullable=False)
-    password = db.Column(db.TEXT, nullable=False)
-    posts = relationship("BlogPost", back_populates='author')
-    comments = relationship("Comment", back_populates='comment_author')
-
-
-# db.create_all()
-
-
-class BlogPost(db.Model):
-    __tablename__ = "blog_posts"
-    id = db.Column(db.Integer, primary_key=True)
-    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    author = relationship("User", back_populates='posts')
-    title = db.Column(db.String(250), unique=True, nullable=False)
-    subtitle = db.Column(db.String(250), nullable=False)
-    date = db.Column(db.String(250), nullable=False)
-    body = db.Column(db.Text, nullable=False)
-    img_url = db.Column(db.String(250), nullable=False)
-    comments = relationship("Comment", back_populates='parent_post')
-
-
-class Comment(db.Model):
-    __tablename__ = 'comments'
-    id = db.Column(db.Integer, primary_key=True)
-    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    comment_author = relationship("User", back_populates='comments')
-    post_id = db.Column(db.Integer, db.ForeignKey('blog_posts.id'))
-    parent_post = relationship("BlogPost", back_populates='comments')
-    text = db.Column(db.TEXT, nullable=False)
-
-
-db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -100,8 +61,12 @@ def get_all_posts():
     return render_template("index.html", all_posts=posts)
 
 
+jwt = None
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    global jwt
     register_form = RegisterForm()
     if register_form.validate_on_submit():
         if User.query.filter_by(email=register_form.email.data).first():
@@ -109,15 +74,39 @@ def register():
             return redirect(url_for('login'))
         else:
             user = User()
+            user.id = os.urandom(20).hex()
             user.name = register_form.name.data
             user.email = register_form.email.data
-            user.password = generate_password_hash(register_form.password.data, salt_length=int(os.environ.get('SALT_LENGTH')))
+            user.password = generate_password_hash(register_form.password.data,
+                                                   salt_length=int(os.environ.get('SALT_LENGTH') or 10))
+
             db.session.add(user)
             db.session.commit()
-            login_user(user, True)
+            email_confirmation(user.email, user.name)
+            flash(
+                "We are send confirmation email to your email address, please follow the instruction to activate your "
+                "account.",
+                "Warning")
             return redirect(url_for('get_all_posts'))
 
     return render_template("register.html", form=register_form)
+
+
+@app.route('/account-confirmation/email/<jwt_token>')
+def confirm_account_as_email(jwt_token):
+    email = check_email_confirmation(jwt_token)
+    if email:
+        # Update the user
+        update_user = User.query.filter_by(email=email).first()
+        update_user.is_email_active = True
+        update_user.is_account_active = True
+        update_user.confirmed_time = datetime.now()
+        db.session.commit()
+        login_user(update_user, True)
+        flash("You are successfully authenticated now. thank you for visiting my blog.", "success")
+        return redirect(url_for("get_all_posts"))
+    else:
+        return redirect(url_for('register'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -126,11 +115,16 @@ def login():
     if login_form.validate_on_submit():
         user = User.query.filter_by(email=login_form.email.data).first()
         if user is not None:
-            if check_password_hash(user.password, login_form.password.data):
-                login_user(user, True)
-                return redirect(url_for('get_all_posts'))
+            if user.is_account_active:
+                print(user.is_account_active)
+                if check_password_hash(user.password, login_form.password.data):
+                    login_user(user, True)
+                    return redirect(url_for('get_all_posts'))
+                else:
+                    flash("Password incorrect. please try again", "error")
+                    return redirect(url_for('login'))
             else:
-                flash("Password incorrect. please try again", "error")
+                flash("Your account is not activating. please try again or contact me.", "error")
                 return redirect(url_for('login'))
         else:
             flash("Email is does not exist, please try again.", "error")
@@ -225,5 +219,19 @@ def delete_post(post_id):
     return redirect(url_for('get_all_posts'))
 
 
+@app.route('/delete/comment/<int:post_id>/<int:comment_id>/<int:user_id>')
+@login_required
+def delete_comment(post_id, comment_id, user_id):
+    comments = Comment.query.filter_by(author_id=user_id).all()
+    for comment in comments:
+        if comment.post_id == post_id and comment.id == comment_id:
+            db.session.delete(comment)
+            db.session.commit()
+            return redirect(url_for('show_post', post_id=post_id))
+
+    flash("Comment deleting is failed. please try again.")
+    return redirect(url_for('show_post', post_id=post_id))
+
+
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

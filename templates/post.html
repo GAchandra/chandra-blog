@@ -6,6 +6,7 @@
     <div class="container">
       <div class="row">
         <div class="col-lg-8 col-md-10 mx-auto">
+
           <div class="post-heading">
             <h1>{{post.title}}</h1>
             <h2 class="subheading">{{post.subtitle}}</h2>
@@ -13,6 +14,13 @@
               <a href="#">{{post.author.name}}</a>
               on {{post.date}}</span>
           </div>
+                  {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <p class="flashes {{ category }}">{{ message }}</p>
+              {% endfor %}
+            {% endif %}
+            {% endwith %}
         </div>
       </div>
     </div>
@@ -45,9 +53,16 @@
                     </div>
                     <div class="commentText">
                       {{ comment.text|safe}}
-                       <span class="date sub-text">{{comment.comment_author.name}}</span>
+
+                      {% if comment.comment_author.id == current_user.id %}
+                      <a style="display: inline" href="{{ url_for('delete_comment', post_id=comment.post_id, comment_id=comment.id,user_id=comment.author_id)}}">Delete</a>
+                      {% endif %}
+                      <span class="date sub-text">{{comment.comment_author.name}}</span>
+                      <a style="margin-left: 20px"  href="/comment/useful">👍</a><a style="margin-left: 20px" href="/comment/unuseful">👎</a>
+
                     </div>
                 </li>
+                <hr>
                 {% endfor %}
               </ul>
             </div>
