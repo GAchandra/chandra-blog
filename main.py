@@ -117,7 +117,6 @@ def confirm_account_as_email(jwt_token):
     else:
         return redirect(url_for('get_all_posts'))
 
-user_email = ""
 @app.route('/account-confirmation/email/resend/', methods=['GET', 'POST'])
 def resend_verification():
     if current_user is not None:
@@ -125,14 +124,14 @@ def resend_verification():
         if resend_email_form.validate_on_submit():
             user_email_data = resend_email_form.email.data
             user = User.query.filter_by(email=user_email_data).first()
-            if  not(user.is_account_active and user.is_email_confirmed )and user_email == user_email_data and user.email == user_email_data :
+            if  not(user.is_account_active and user.is_email_confirmed )and user.email == user_email_data :
                 email_confirmation(user.email, user.name)
                 flash(
                     "We are send confirmation email to your email address, please follow the instruction to activate your "
                     "account.",
                     "Warning")
                 return redirect(url_for('get_all_posts'))
-            elif not(user_email == user_email_data and user.email == user_email_data):
+            elif not( user.email == user_email_data):
                 flash("You are not author of this account. you cant access any ones account.")
                 return redirect(url_for('login'))
             else:
