@@ -1,8 +1,10 @@
-import ssl,smtplib
+import smtplib
+import ssl
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.multipart import  MIMEMultipart
 
-def send_email(sender_email:str, sender_passwrod, receiver_email:str, provided_message:dict, subject):
+
+def send_email(sender_email: str, sender_passwrod, receiver_email: str, provided_message: dict, subject):
     message = MIMEMultipart('alternative')
     message['Subject'] = subject
     message['From'] = sender_email
@@ -21,8 +23,8 @@ def send_email(sender_email:str, sender_passwrod, receiver_email:str, provided_m
     message.attach(part2)
     # Create secure connection with server and send email
     context = ssl.create_default_context()
-    with smtplib.SMTP_SSL('smtp.mail.yahoo.com', 465 , context=context) as server:
+    with smtplib.SMTP_SSL('smtp.mail.yahoo.com', 465, context=context) as server:
         server.login(sender_email, sender_passwrod)
         server.sendmail(
-            sender_email,receiver_email, message.as_string()
+            sender_email, receiver_email, message.as_string()
         )
