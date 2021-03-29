@@ -1,4 +1,5 @@
 # Import all required models and Frameworks
+import json
 from functools import wraps
 from flask import Flask, render_template, redirect, url_for, flash, abort, request
 from flask_bootstrap import Bootstrap
@@ -14,6 +15,7 @@ import os
 from datetime import datetime
 from tables import create_tables
 from authentication import Authentication
+
 
 # Create flask app
 app = Flask(__name__)
@@ -43,6 +45,36 @@ db = SQLAlchemy(app)
 User, NotConfirmedAccount, BlogPost, Comment = create_tables(db, UserMixin=UserMixin)
 
 db.create_all()
+
+# Admin user account
+db_admin_emails = User.query.filter_by(is_admin=True).all()
+admin_emails_len = len(db_admin_emails)
+is_issue = True
+admin_emails = ()
+admin_names = ()
+admin_passwords = ()
+if admin_emails_len == 1 or admin_emails_len == 2:
+    admin_emails = json.loads(os.environ.get('ADMIN_EMAILS'))
+    admin_names = json.loads(os.environ.get('ADMIN_NAMES'))
+    admin_passwords = json.loads(os.environ.get('PASSWORDS'))
+    for admin_email in db_admin_emails:
+        if admin_email in admin_emails:
+            is_issue = False
+        else:
+            is_issue = True
+elif admin_emails_len == 0:
+    admin = User()
+    admin.name = admin_names[0]
+    admin.email = db_admin_emails[0]
+    admin.password = generate_password_hash(admin_passwords[0], os.environ.get('SALT_LENGTH'))
+    admin.name =  admin_names[1]
+    admin.email = admin_emails[1]
+    admin.password = generate_password_hash(admin_passwords[1], os.environ.get('SALT_LENGTH'))
+    db.session.add(admin)
+    db.session.commit()
+if is_issue:
+    db.drop_all()
+    db.create_all()
 
 authentication = Authentication()
 
