@@ -5,7 +5,7 @@ from jwt.exceptions import InvalidSignatureError
 from flask import request
 from send_email import send_email
 from my_encryption import MyEncryption
-from constants import *
+
 
 my_encryption = MyEncryption()
 
