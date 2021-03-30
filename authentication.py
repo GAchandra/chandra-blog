@@ -19,7 +19,7 @@ class Authentication:
             'alg': 'HS256',
             'typ': 'JWT'
         }
-        self.sender_email = os.environ.get('EMAIL_ADDRESS')
+        self.sender_email = os.environ.get('SENDER_EMAIL')
         self.sender_password = os.environ.get('SENDER_EMAIL_PASSWORD')
         self.email_confirmation_data = {}
         self.secret_key = os.urandom(20).hex()
