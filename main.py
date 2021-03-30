@@ -16,7 +16,6 @@ from datetime import datetime
 from tables import create_tables
 from authentication import Authentication
 
-
 # Create flask app
 app = Flask(__name__)
 # Add the secret key
@@ -38,7 +37,7 @@ gravatar = Gravatar(app,
                     use_ssl=False,
                     base_url=None)
 # CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 # Create tables
@@ -49,32 +48,54 @@ db.create_all()
 # Admin user account
 db_admin_emails = User.query.filter_by(is_admin=True).all()
 admin_emails_len = len(db_admin_emails)
-is_issue = True
-admin_emails = ()
-admin_names = ()
-admin_passwords = ()
+
+admin_emails = json.loads(os.environ.get('ADMIN_EMAILS'))
+admin_names = json.loads(os.environ.get('ADMIN_NAMES'))
+admin_passwords = json.loads(os.environ.get('PASSWORDS'))
+
+
+def add_admin_to_db():
+    if len(admin_names) > 0:
+        while True:
+            admin1 = User()
+            admin1.id = os.urandom(20).hex()
+            admin1.name = admin_names[0]
+            admin1.email = admin_emails[0]
+            admin1.password = generate_password_hash(admin_passwords[0], salt_length=int(os.environ.get('SALT_LENGTH')))
+            admin1.is_email_confirmed = True
+            admin1.is_admin = True
+            admin1.email_confirmed_time = datetime.now()
+            admin1.is_account_active = True
+            # 2
+            admin2 = User()
+            admin2.id = os.urandom(20).hex()
+            admin2.name = admin_names[1]
+            admin2.email = admin_emails[1]
+            admin2.password = generate_password_hash(admin_passwords[1], salt_length=int(os.environ.get('SALT_LENGTH')))
+            admin2.is_email_confirmed = True
+            admin2.is_admin = True
+            admin2.email_confirmed_time = datetime.now()
+            admin2.is_account_active = True
+
+            db.session.add(admin1)
+            db.session.add(admin2)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                pass
+            else:
+                break
+
+
 if admin_emails_len == 1 or admin_emails_len == 2:
-    admin_emails = json.loads(os.environ.get('ADMIN_EMAILS'))
-    admin_names = json.loads(os.environ.get('ADMIN_NAMES'))
-    admin_passwords = json.loads(os.environ.get('PASSWORDS'))
-    for admin_email in db_admin_emails:
-        if admin_email in admin_emails:
-            is_issue = False
-        else:
-            is_issue = True
+    for db_admin_email in db_admin_emails:
+        if db_admin_email.email not in admin_emails:
+            db.drop_all()
+            db.create_all()
+            add_admin_to_db()
+
 elif admin_emails_len == 0:
-    admin = User()
-    admin.name = admin_names[0]
-    admin.email = db_admin_emails[0]
-    admin.password = generate_password_hash(admin_passwords[0], os.environ.get('SALT_LENGTH'))
-    admin.name =  admin_names[1]
-    admin.email = admin_emails[1]
-    admin.password = generate_password_hash(admin_passwords[1], os.environ.get('SALT_LENGTH'))
-    db.session.add(admin)
-    db.session.commit()
-if is_issue:
-    db.drop_all()
-    db.create_all()
+    add_admin_to_db()
 
 authentication = Authentication()
 
@@ -126,7 +147,7 @@ def register():
                 not_confirmed_user.email = register_form.email.data
                 not_confirmed_user.password = generate_password_hash(
                     register_form.password.data,
-                    salt_length=int(os.environ.get('SALT_LENGTH', '10')))
+                    salt_length=int(os.environ.get('SALT_LENGTH')))
 
                 db.session.add(not_confirmed_user)
                 try:
@@ -346,7 +367,7 @@ def change_password(user_id):
                                 <p>Name: {user.name} </p>
                                 <p>email: {user.email} </p> <br> <h2 style='color: blue;'>If this is only request 
                                 you, click billow like to change user password</h2> 
-                                
+
                         """
                         authentication.back_to_default(user)
                         authentication.email_confirmation(text_message_body, subheading, description,

@@ -6,7 +6,6 @@ from flask import request
 from send_email import send_email
 from my_encryption import MyEncryption
 
-
 my_encryption = MyEncryption()
 
 
@@ -21,7 +20,7 @@ class Authentication:
             'typ': 'JWT'
         }
         self.sender_email = os.environ.get('EMAIL_ADDRESS')
-        self.sender_password = os.environ.get('EMAIL_PASSWORD')
+        self.sender_password = os.environ.get('EMAIL_ADDRESS')
         self.email_confirmation_data = {}
         self.secret_key = os.urandom(20).hex()
         self.encrypted_another_data = {}
